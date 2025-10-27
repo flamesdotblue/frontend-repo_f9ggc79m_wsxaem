@@ -8,7 +8,7 @@ import Dashboard from './components/Dashboard';
 
 function App() {
   const [screen, setScreen] = useState('auth'); // auth -> courses -> assessment -> dashboard
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
     const root = document.documentElement;
@@ -17,23 +17,27 @@ function App() {
   }, [theme]);
 
   return (
-    <div className="font-sans">
-      {/* Light/Dark toggle */}
+    <div className="font-sans bg-black text-white min-h-screen">
+      {/* Theme toggle */}
       <button
         onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
-        className="fixed right-4 top-4 z-50 inline-flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 text-sm text-slate-700 ring-1 ring-white/60 shadow-md backdrop-blur transition hover:bg-white dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
+        className="fixed right-4 top-4 z-50 inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm text-slate-200 ring-1 ring-white/10 shadow-md backdrop-blur transition hover:bg-white/15"
       >
-        {theme === 'light' ? <>
-          <Moon className="h-4 w-4" /> Dark
-        </> : <>
-          <Sun className="h-4 w-4" /> Light
-        </>}
+        {theme === 'light' ? (
+          <>
+            <Moon className="h-4 w-4" /> Dark
+          </>
+        ) : (
+          <>
+            <Sun className="h-4 w-4" /> Light
+          </>
+        )}
       </button>
 
       <AnimatePresence mode="wait">
         {screen === 'auth' && (
           <motion.div key="auth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AuthScreen onSuccess={() => setScreen('courses')} />
+            <AuthScreen onSuccess={() => setScreen('dashboard')} onExplore={() => setScreen('courses')} />
           </motion.div>
         )}
         {screen === 'courses' && (
