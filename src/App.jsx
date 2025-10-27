@@ -1,28 +1,59 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Moon, Sun } from 'lucide-react';
+import AuthScreen from './components/AuthScreen';
+import CourseSelect from './components/CourseSelect';
+import Assessment from './components/Assessment';
+import Dashboard from './components/Dashboard';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [screen, setScreen] = useState('auth'); // auth -> courses -> assessment -> dashboard
+  const [theme, setTheme] = useState('light');
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') root.classList.add('dark');
+    else root.classList.remove('dark');
+  }, [theme]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Vibe Coding Platform
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your AI-powered development environment
-        </p>
-        <div className="text-center">
-          <button
-            onClick={() => setCount(count + 1)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Count is {count}
-          </button>
-        </div>
-      </div>
+    <div className="font-sans">
+      {/* Light/Dark toggle */}
+      <button
+        onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
+        className="fixed right-4 top-4 z-50 inline-flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 text-sm text-slate-700 ring-1 ring-white/60 shadow-md backdrop-blur transition hover:bg-white dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
+      >
+        {theme === 'light' ? <>
+          <Moon className="h-4 w-4" /> Dark
+        </> : <>
+          <Sun className="h-4 w-4" /> Light
+        </>}
+      </button>
+
+      <AnimatePresence mode="wait">
+        {screen === 'auth' && (
+          <motion.div key="auth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <AuthScreen onSuccess={() => setScreen('courses')} />
+          </motion.div>
+        )}
+        {screen === 'courses' && (
+          <motion.div key="courses" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <CourseSelect onPickPath={() => setScreen('assessment')} />
+          </motion.div>
+        )}
+        {screen === 'assessment' && (
+          <motion.div key="assessment" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <Assessment onComplete={() => setScreen('dashboard')} />
+          </motion.div>
+        )}
+        {screen === 'dashboard' && (
+          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <Dashboard onOpenAssessment={() => setScreen('assessment')} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
