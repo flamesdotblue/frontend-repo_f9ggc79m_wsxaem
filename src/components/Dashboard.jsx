@@ -1,32 +1,77 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, MessageSquare, Play, FileText, BookOpen, Sparkles, ChevronRight, ArrowLeft, Search, Layers } from 'lucide-react';
+import { Home, Layers, BookOpen, MessageSquare, Search, ChevronRight, ArrowLeft, Sparkles, FolderOpen, ListChecks } from 'lucide-react';
 
-const topicData = [
-  { id: 1, title: 'Introduction to HTML', summary: 'Structure, tags, attributes, and semantics', progress: 80, section: 'Foundations' },
-  { id: 2, title: 'CSS Basics', summary: 'Selectors, cascade, layout, and responsive design', progress: 45, section: 'Foundations' },
-  { id: 3, title: 'JavaScript Fundamentals', summary: 'Variables, functions, DOM, and events', progress: 20, section: 'Foundations' },
-  { id: 4, title: 'Flexbox & Grid', summary: 'Modern layout systems for responsive design', progress: 55, section: 'Layout' },
-  { id: 5, title: 'Responsive Design', summary: 'Fluid grids, breakpoints, mobile-first', progress: 30, section: 'Layout' },
-  { id: 6, title: 'Async JS & APIs', summary: 'Promises, async/await, fetch, and APIs', progress: 10, section: 'JavaScript' },
-  { id: 7, title: 'React Basics', summary: 'Components, props, state, and hooks', progress: 0, section: 'Frameworks' },
-  { id: 8, title: 'State Management', summary: 'Context, reducers, and patterns', progress: 0, section: 'Frameworks' },
-  { id: 9, title: 'Accessibility', summary: 'ARIA, keyboard navigation, semantics', progress: 0, section: 'Quality' },
-  { id: 10, title: 'Testing Basics', summary: 'Unit, integration, and E2E', progress: 0, section: 'Quality' },
+// Course -> Chapters -> Topics (3-tier)
+const courses = [
+  {
+    key: 'web',
+    title: 'Web Development',
+    blurb: 'Build modern experiences with HTML, CSS, JavaScript, and React.',
+    accent: ['#4C9AFF', '#8B5CF6'],
+    chapters: [
+      {
+        key: 'html-basics',
+        title: 'HTML Basics',
+        desc: 'Structure the web with semantic building blocks.',
+        topics: [
+          { id: 'html-structure', title: 'Document Structure', summary: 'Head, body, metadata, and semantic layout', progress: 80 },
+          { id: 'html-text', title: 'Text & Links', summary: 'Headings, paragraphs, anchors, emphasis', progress: 60 },
+          { id: 'html-media', title: 'Images & Media', summary: 'img, video, audio, figure, accessibility', progress: 25 },
+        ],
+      },
+      {
+        key: 'css-essentials',
+        title: 'CSS Essentials',
+        desc: 'Style systems that scale from mobile to desktop.',
+        topics: [
+          { id: 'css-selectors', title: 'Selectors & Specificity', summary: 'Cascade, inheritance, specificity wars', progress: 45 },
+          { id: 'layout-modern', title: 'Flexbox & Grid', summary: 'Compose responsive layouts with ease', progress: 30 },
+          { id: 'responsive', title: 'Responsive Design', summary: 'Fluid, breakpoints, and container queries', progress: 10 },
+        ],
+      },
+      {
+        key: 'js-core',
+        title: 'JavaScript Core',
+        desc: 'From variables to async, learn by doing.',
+        topics: [
+          { id: 'js-fundamentals', title: 'Fundamentals', summary: 'Types, functions, arrays, objects', progress: 20 },
+          { id: 'dom-events', title: 'DOM & Events', summary: 'Query, update, listen, and animate', progress: 15 },
+          { id: 'async-apis', title: 'Async & APIs', summary: 'Promises, async/await, fetch', progress: 5 },
+        ],
+      },
+      {
+        key: 'react-foundations',
+        title: 'React Foundations',
+        desc: 'Components, state, hooks, and patterns.',
+        topics: [
+          { id: 'react-basics', title: 'Components & Props', summary: 'Composition and data flow', progress: 0 },
+          { id: 'react-state', title: 'State & Effects', summary: 'useState, useEffect, lifecycles', progress: 0 },
+          { id: 'react-routing', title: 'Routing & Data', summary: 'Client navigation and data fetching', progress: 0 },
+        ],
+      },
+    ],
+  },
 ];
 
 export default function Dashboard({ onOpenAssessment }) {
-  const [openTopic, setOpenTopic] = useState(null);
-  const [query, setQuery] = useState('');
+  // view: home -> chapters -> topics -> lesson
+  const [view, setView] = useState('home');
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedChapter, setSelectedChapter] = useState(null);
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const course = useMemo(() => courses[0], []);
 
-  if (openTopic) {
-    return <LessonPlan topic={openTopic} onBack={() => setOpenTopic(null)} onOpenAssessment={onOpenAssessment} />;
+  // Lesson view shortcut
+  if (view === 'lesson' && selectedTopic) {
+    return (
+      <LessonPlan
+        topic={{ title: selectedTopic.title, summary: selectedTopic.summary }}
+        onBack={() => setView('topics')}
+        onOpenAssessment={onOpenAssessment}
+      />
+    );
   }
-
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    return topicData.filter(t => t.title.toLowerCase().includes(q) || t.summary.toLowerCase().includes(q));
-  }, [query]);
 
   return (
     <div className="min-h-screen bg-black p-4 md:p-6">
@@ -38,8 +83,8 @@ export default function Dashboard({ onOpenAssessment }) {
               <Home className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-sm font-medium text-white">Your Dashboard</div>
-              <div className="text-xs text-slate-300">Web Development</div>
+              <div className="text-sm font-medium text-white">Home</div>
+              <div className="text-xs text-slate-300">EduPlanner</div>
             </div>
           </div>
           <nav className="grid gap-2 text-sm">
@@ -49,48 +94,153 @@ export default function Dashboard({ onOpenAssessment }) {
           </nav>
         </aside>
 
-        {/* Main - Vertical topics list */}
+        {/* Main */}
         <main className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 shadow-xl backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <button className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm font-medium text-slate-200 ring-1 ring-white/10 backdrop-blur transition hover:bg-white/15">
-                <Sparkles className="h-4 w-4 text-[#8B5CF6]" /> AI Assistant
-              </button>
-              <button className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm font-medium text-slate-200 ring-1 ring-white/10 backdrop-blur transition hover:bg-white/15">
-                Generate Plan Again
-              </button>
-            </div>
-            <div className="flex w-full items-center gap-2 sm:w-72">
-              <Search className="h-4 w-4 text-slate-400" />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search topics..." className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-400 focus:outline-none" />
-            </div>
-          </div>
+          <TopBar
+            title={
+              view === 'home' ? 'Choose your path' :
+              view === 'chapters' ? selectedCourse?.title :
+              view === 'topics' ? `${selectedCourse?.title} • ${selectedChapter?.title}` : 'Lesson Plan'
+            }
+            subtitle={
+              view === 'home' ? 'Pick a domain and dive in.' :
+              view === 'chapters' ? selectedCourse?.blurb :
+              view === 'topics' ? selectedChapter?.desc : selectedTopic?.summary
+            }
+            onBack={view !== 'home' ? () => {
+              if (view === 'chapters') { setView('home'); setSelectedCourse(null); }
+              else if (view === 'topics') { setView('chapters'); setSelectedChapter(null); }
+              else if (view === 'lesson') { setView('topics'); setSelectedTopic(null); }
+            } : null}
+          />
 
-          <section className="space-y-3">
-            {filtered.map((t) => (
-              <motion.div
-                key={t.id}
-                whileHover={{ y: -2 }}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur-xl"
-              >
-                <div className="mb-1 text-base font-semibold text-white">
-                  <button onClick={() => setOpenTopic(t)} className="hover:underline">{t.title}</button>
-                </div>
-                <div className="text-sm text-slate-300">{t.summary}</div>
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="h-2 w-2/3 rounded-full bg-white/10">
-                    <div className="h-2 rounded-full bg-gradient-to-r from-[#4C9AFF] to-[#8B5CF6]" style={{ width: `${t.progress}%` }} />
-                  </div>
-                  <button onClick={onOpenAssessment} className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#4C9AFF] to-[#8B5CF6] px-3 py-1.5 text-sm font-medium text-white shadow-md">
-                    Take Test <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </section>
+          {view === 'home' && (
+            <CourseGrid
+              items={courses}
+              onSelect={(c) => { setSelectedCourse(c); setView('chapters'); }}
+            />
+          )}
+
+          {view === 'chapters' && selectedCourse && (
+            <ChapterList
+              items={selectedCourse.chapters}
+              onSelect={(ch) => { setSelectedChapter(ch); setView('topics'); }}
+            />
+          )}
+
+          {view === 'topics' && selectedChapter && (
+            <TopicList
+              items={selectedChapter.topics}
+              onSelect={(t) => { setSelectedTopic(t); setView('lesson'); }}
+              onOpenAssessment={onOpenAssessment}
+            />
+          )}
         </main>
       </div>
     </div>
+  );
+}
+
+function TopBar({ title, subtitle, onBack }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 shadow-xl backdrop-blur-xl">
+      <div className="flex min-w-0 items-center gap-3">
+        {onBack ? (
+          <button onClick={onBack} className="rounded-2xl bg-white/10 px-3 py-2 text-slate-200 ring-1 ring-white/10 hover:bg-white/15">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+        ) : (
+          <div className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10">
+            <Sparkles className="h-4 w-4 text-[#8B5CF6]" /> Welcome
+          </div>
+        )}
+        <div className="truncate">
+          <div className="text-base font-semibold text-white">{title}</div>
+          <div className="text-sm text-slate-300">{subtitle}</div>
+        </div>
+      </div>
+      <div className="flex w-full items-center gap-2 sm:w-72">
+        <Search className="h-4 w-4 text-slate-400" />
+        <input placeholder="Search..." className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-400 focus:outline-none" />
+      </div>
+    </div>
+  );
+}
+
+function CourseGrid({ items, onSelect }) {
+  return (
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((c) => (
+        <motion.button
+          key={c.key}
+          whileHover={{ y: -6 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => onSelect(c)}
+          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-5 text-left shadow-xl backdrop-blur-xl"
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_50%_at_10%_0%,rgba(76,154,255,0.15),transparent_60%),radial-gradient(50%_50%_at_90%_100%,rgba(139,92,246,0.15),transparent_60%)]" />
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-slate-200 ring-1 ring-white/10">
+            <FolderOpen className="h-3.5 w-3.5 text-[#4C9AFF]" /> Course
+          </div>
+          <div className="mb-1 text-lg font-semibold text-white">{c.title}</div>
+          <div className="text-sm text-slate-300">{c.blurb}</div>
+          <div className="mt-4 flex items-center gap-2 text-[#4C9AFF]">
+            Explore <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+          </div>
+        </motion.button>
+      ))}
+    </div>
+  );
+}
+
+function ChapterList({ items, onSelect }) {
+  return (
+    <section className="space-y-3">
+      {items.map((ch, idx) => (
+        <motion.div
+          key={ch.key}
+          whileHover={{ y: -2 }}
+          className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur-xl"
+        >
+          <div className="mb-1 text-base font-semibold text-white">
+            <button onClick={() => onSelect(ch)} className="hover:underline flex items-center gap-2">
+              <Layers className="h-4 w-4 text-[#8B5CF6]" />
+              {idx + 1}. {ch.title}
+            </button>
+          </div>
+          <div className="text-sm text-slate-300">{ch.desc}</div>
+        </motion.div>
+      ))}
+    </section>
+  );
+}
+
+function TopicList({ items, onSelect, onOpenAssessment }) {
+  return (
+    <section className="space-y-3">
+      {items.map((t) => (
+        <motion.div
+          key={t.id}
+          whileHover={{ y: -2 }}
+          className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur-xl"
+        >
+          <div className="mb-1 flex items-center justify-between gap-3">
+            <div className="text-base font-semibold text-white">
+              <button onClick={() => onSelect(t)} className="hover:underline flex items-center gap-2">
+                <ListChecks className="h-4 w-4 text-[#4C9AFF]" /> {t.title}
+              </button>
+            </div>
+            <button onClick={onOpenAssessment} className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#4C9AFF] to-[#8B5CF6] px-3 py-1.5 text-sm font-medium text-white shadow-md">
+              Quick Quiz <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="text-sm text-slate-300">{t.summary}</div>
+          <div className="mt-3 h-2 w-2/3 rounded-full bg-white/10">
+            <div className="h-2 rounded-full bg-gradient-to-r from-[#4C9AFF] to-[#8B5CF6]" style={{ width: `${t.progress}%` }} />
+          </div>
+        </motion.div>
+      ))}
+    </section>
   );
 }
 
@@ -113,7 +263,7 @@ function LessonPlan({ topic, onBack, onOpenAssessment }) {
     <div className="min-h-screen bg-black p-4 md:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <button onClick={onBack} className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm text-slate-200 ring-1 ring-white/10 backdrop-blur transition hover:bg-white/15">
-          <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+          <ArrowLeft className="h-4 w-4" /> Back
         </button>
 
         {/* Header */}
@@ -132,16 +282,14 @@ function LessonPlan({ topic, onBack, onOpenAssessment }) {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {/* Left content */}
           <div className="space-y-6 md:col-span-2">
-            {/* Overview (collapsible) */}
             <Section title="Overview" isOpen={open.overview} onToggle={() => setOpen(s => ({...s, overview: !s.overview}))}>
               <p className="text-sm text-slate-300">This lesson introduces key ideas with a short video, concise notes, and practice tasks. Use the progress timeline to jump between stages.</p>
               <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-3">
                 <div className="aspect-video w-full rounded-xl bg-gradient-to-br from-[#4C9AFF]/20 to-[#8B5CF6]/20" />
-                <div className="mt-3 flex items-center gap-2 text-xs text-slate-300"><Play className="h-3.5 w-3.5" /> Video Tutorial</div>
+                <div className="mt-3 flex items-center gap-2 text-xs text-slate-300">Video Tutorial</div>
               </div>
             </Section>
 
-            {/* Objectives (collapsible) */}
             <Section title="Learning Objectives" isOpen={open.objectives} onToggle={() => setOpen(s => ({...s, objectives: !s.objectives}))}>
               <ul className="list-disc space-y-2 pl-5 text-sm text-slate-200">
                 <li>Understand the problem domain and vocabulary</li>
@@ -150,7 +298,6 @@ function LessonPlan({ topic, onBack, onOpenAssessment }) {
               </ul>
             </Section>
 
-            {/* Steps (collapsible + interactive) */}
             <Section title="Lesson Steps" isOpen={open.steps} onToggle={() => setOpen(s => ({...s, steps: !s.steps}))}>
               <div className="space-y-4">
                 {steps.map((s, i) => (
@@ -170,7 +317,6 @@ function LessonPlan({ topic, onBack, onOpenAssessment }) {
               </div>
             </Section>
 
-            {/* Resources (collapsible) */}
             <Section title="Resources" isOpen={open.resources} onToggle={() => setOpen(s => ({...s, resources: !s.resources}))}>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <a href="#" className="rounded-2xl bg-white/5 p-3 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/10">MDN Guide</a>
